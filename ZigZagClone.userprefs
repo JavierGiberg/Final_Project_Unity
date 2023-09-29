@@ -1,0 +1,18 @@
+﻿<Properties StartupConfiguration="{A4FC0106-9A70-256E-36A7-8783F3341F47}|">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Scripts/CharController.cs">
+    <Files>
+      <File FileName="Assets/Scripts/CharController.cs" Line="49" Column="31" />
+      <File FileName="Assets/Scripts/FollowCam.cs" Line="18" Column="48" />
+      <File FileName="Assets/Scripts/GameManager.cs" Line="21" Column="49" />
+      <File FileName="Assets/Scripts/BackgroundLoop.cs" Line="16" Column="9" />
+      <File FileName="Assets/Scripts/Road.cs" Line="40" Column="9" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MultiItemStartupConfigurations />
+  <MonoDevelop.Ide.ItemProperties.ZigZagClone PreferredExecutionTarget="Unity.Editor" />
+</Properties>
