@@ -3,6 +3,7 @@ using UnityEngine.SceneManagement;
 
 public class FinishLevel : MonoBehaviour
 {
+    public bool goalHasReached;
     private int currentScore;
 
     private void OnEnable()
@@ -22,7 +23,7 @@ public class FinishLevel : MonoBehaviour
 
     void Update()
     {
-        if (currentScore >= 2)
+        if (goalHasReached)
         {
             CompleteLevel();
         }
@@ -30,6 +31,7 @@ public class FinishLevel : MonoBehaviour
 
     private void CompleteLevel()
     {
+        Debug.Log("Im here");
         int nextSceneIndex = SceneManager.GetActiveScene().buildIndex + 1;
         if (nextSceneIndex < SceneManager.sceneCountInBuildSettings)
         {

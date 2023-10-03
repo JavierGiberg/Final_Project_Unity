@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enableSpaces: 1
   varyHeight: 1
-  spaceSize: 0
+  spaceSize: 1
   isStairLevel: 1
