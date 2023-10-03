@@ -15,3 +15,7 @@ MonoBehaviour:
   enableSpaces: 0
   varyHeight: 0
   spaceSize: 0
+  isStairLevel: 0
+  isMixedLevel: 1
+  maxRoads: 100
+  isInfinite: 0

@@ -1,10 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine;
 
 
-public class CharController : MonoBehaviour {
+public class CharController : MonoBehaviour
+{
 
     public Transform rayStart;
     public GameObject crystalEffect;
@@ -12,28 +13,63 @@ public class CharController : MonoBehaviour {
     private Rigidbody rb;
     private Animator anim;
     private GameManager gameManager;
-    private int radius = 90;
-    public float jumpForce = 0f; 
+    public int speed = 2;
     private bool isGrounded = true;
-    public float jumpDistance;
-    private PlayerControls controls; 
-    private Vector2 moveInput;
-    int speed = 2;
+
+    public float jumpForce = 5f;
+    public float jumpCooldown = 0.75f;
+    public float jumpCooldownTimer = 0.75f;
+    /// Stomp Vars
+    public float stompForce = 0f;
+    public float stompCooldown = 0.75f;
+    public float stompCooldownTimer = 0.75f;
+
+    private NewInputs input;
+    private Vector3 inputVector;
+    public float skyboxSpeed;
 
 
-    void Awake () {
+
+    void Awake()
+    {
+
         rb = GetComponent<Rigidbody>();
         anim = GetComponent<Animator>();
         gameManager = FindObjectOfType<GameManager>();
-        controls = new PlayerControls();
-        controls.Player.Jump.performed += ctx => Jump();
-        controls.Player.StartRun.performed += ctx => StartRun();
-        controls.Player.MoveLeft.performed += ctx => RotateLeft();
-        controls.Player.MoveRight.performed += ctx => RotateRight();
-        controls.Player.MoveUp.performed += ctx => Up();
+        input = new NewInputs();
+    }
 
+    #region New User Input Functions
+
+    private void OnEnable()
+    {
+
+        input.Enable();
+        input.Player.Movement.performed += MovmentPerfomed;
+        input.Player.Movement.canceled += MovmentCancelled;
 
     }
+
+    private void OnDisable()
+    {
+        input.Disable();
+        input.Player.Movement.performed -= MovmentPerfomed;
+        input.Player.Movement.canceled -= MovmentCancelled;
+
+    }
+
+    private void MovmentPerfomed(InputAction.CallbackContext value)
+    {
+        inputVector = value.ReadValue<Vector3>();
+    }
+
+    private void MovmentCancelled(InputAction.CallbackContext value)
+    {
+
+        inputVector = Vector3.zero;
+    }
+
+    #endregion
 
     private void FixedUpdate()
     {
@@ -44,80 +80,99 @@ public class CharController : MonoBehaviour {
         }
         else
         {
-            Debug.Log("yes");
             anim.SetTrigger("gameStarted");
         }
 
-        Debug.Log("FixedUpdate is being called, Speed: " + speed); 
-        rb.transform.position = transform.position + transform.forward * (float)speed * Time.deltaTime; 
-    }
 
-
-
-    void Update()
-    {
-
-        if (!Physics.Raycast(rayStart.position, -transform.up, out RaycastHit hit, 2))
+        if (transform.rotation.eulerAngles.y > 45) // Skybox
         {
-            anim.SetTrigger("isFalling");
-            Debug.Log("Falling");
+            RenderSettings.skybox.SetFloat("_Rotation", RenderSettings.skybox.GetFloat("_Rotation") + skyboxSpeed);
         }
         else
         {
-            anim.SetTrigger("notFallingAnymore");
+            RenderSettings.skybox.SetFloat("_Rotation", RenderSettings.skybox.GetFloat("_Rotation") - skyboxSpeed);
         }
-        if (transform.position.y < -2)
+
+        #region Movement
+
+
+        rb.transform.position += transform.forward * speed * Time.deltaTime;
+
+        #region Cooldown Timers
+
+        if (jumpCooldownTimer < jumpCooldown)
         {
-            gameManager.EndGame();
+
+            jumpCooldownTimer += Time.deltaTime;
+
         }
-    }
-
-
-
-    void RotateLeft()
-    {
-        transform.rotation = Quaternion.Euler(0, radius -= 90, 0);
-    }
-
-    void RotateRight()
-    {
-        transform.rotation = Quaternion.Euler(0, radius += 90, 0);
-    }
-
-
-    void Up()
-    {
-        transform.rotation = Quaternion.Euler(radius + 90, 0, 0); 
-    }
-
-
-    void OnEnable()
-    {
-        controls.Player.Enable();
-    }
-
-    void OnDisable()
-    {
-        controls.Player.Disable();
-    }
-
-
-    void Jump()
-    {
-        if (isGrounded)
+        if (stompCooldownTimer < jumpCooldown)
         {
+
+            stompCooldownTimer += Time.deltaTime;
+
+        }
+
+        #endregion
+
+        if (inputVector.x == 1) 
+        {
+            transform.rotation = Quaternion.Euler(0, 90, 0);
+            transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(0, 90, 0), 0.5f); // Smooth rotation, less the 0.5 will need longer hold
+            Vector3 newPos = new Vector3(transform.position.x, transform.position.y, Mathf.Round(transform.position.z)); // Closest middle of a road
+            transform.position = Vector3.MoveTowards(transform.position, newPos, speed * Time.deltaTime);  // Smooth corection to the middle of the road
+
+        }
+        if (inputVector.x == -1) 
+        {
+            transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(0, 0, 0), 0.5f); // Smooth rotation, less the 0.5 will need longer hold
+            Vector3 newPos = new Vector3(Mathf.Round(transform.position.x), transform.position.y, transform.position.z); // Closest middle of a road
+            transform.position = Vector3.MoveTowards(transform.position, newPos, speed * Time.deltaTime);  // Smooth corection to the middle of the road
+
+        }
+        if (inputVector.y == 1 && isGrounded && jumpCooldownTimer >= jumpCooldown) // Jump
+        {
+           //rb.AddForce( new Vector3(0, jumpForce, 0) * jumpDistance, ForceMode.Impulse); // less consistent, sometimes add random boost, most likley after turning
             rb.velocity = new Vector3(rb.velocity.x, jumpForce, rb.velocity.z);
             isGrounded = false;
-            rb.AddForce(transform.forward * jumpDistance, ForceMode.Impulse);
+            jumpCooldownTimer = 0;
+
         }
+        if (inputVector.y == -1 && !isGrounded && stompCooldownTimer >= stompCooldown) // Stomp
+        {
+
+            rb.velocity = new Vector3(rb.velocity.x, -stompForce, rb.velocity.z);
+            stompCooldownTimer = 0;
+
+        }
+
+        #endregion
+
+        #region Ground And Falling Check
+
+        if (!Physics.Raycast(rayStart.position, -transform.up, out RaycastHit hit, 2)) //2 - Same distance as falling of the map
+        {
+
+            anim.SetTrigger("isFalling");
+            Debug.Log("Falling");
+
+        }
+        else
+        {
+
+            anim.SetTrigger("notFallingAnymore");
+
+        }
+        if (rb.velocity.y <= -15 || transform.position.y < -2) // After printing y velocity average downward speed after jump is -5~-6, bigger speed to add time before ending, old check -> transform.position.y < -2
+        {
+
+            gameManager.EndGame();
+
+        }
+
+        #endregion
+
     }
-
-    public void StartRun()
-    {
-        speed *= 2;
-    }
-
-
 
     /*    private void Switch(){
             if(!gameManager.gameStarted){
@@ -138,33 +193,20 @@ public class CharController : MonoBehaviour {
 
         if (collision.gameObject.CompareTag("RoadPart"))
         {
+
             isGrounded = true;
-            //anim.SetTrigger("notFallingAnymore");
+
         }
 
     }
 
-    //private void OnCollisionExit(Collision collision)
-    //{
-
-    //    if (collision.gameObject.CompareTag("RoadPart"))
-    //    {
-    //        isGrounded = false;
-    //        anim.SetTrigger("isFalling");
-    //        Debug.Log("Falling");
-    //    }
-        
-
-    //}
-
     private void OnTriggerEnter(Collider other)
     {
-        if(other.tag == "Crystal"){
-            
-            gameManager.IncreaseScore();
+        if (other.tag == "Crystal")
+        {
 
-            GameObject g = Instantiate(crystalEffect, rayStart.transform.position, Quaternion.identity);
-            Destroy(g, 2);
+            gameManager.IncreaseScore();
+            Destroy(Instantiate(crystalEffect, rayStart.transform.position, Quaternion.identity), 2);
             Destroy(other.gameObject);
 
         }
